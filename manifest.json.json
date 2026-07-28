@@ -1,0 +1,24 @@
+{
+  "name": "Волга Брик — Обзвон клиентов",
+  "short_name": "Волга Брик",
+  "description": "Система обзвона клиентов по продукции завода Волга Брик",
+  "start_url": "/VolgaCall/",
+  "scope": "/VolgaCall/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f2f5",
+  "theme_color": "#1a237e",
+  "icons": [
+    {
+      "src": "/VolgaCall/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/VolgaCall/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ]
+}
