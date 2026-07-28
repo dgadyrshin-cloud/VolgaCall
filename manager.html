@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Волга Брик — Менеджер</title>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-YD6qkyRFo3xQTLkX68Tqx7xMb-ojNiM",
+            authDomain: "volgabrick-f2260.firebaseapp.com",
+            projectId: "volgabrick-f2260",
+            storageBucket: "volgabrick-f2260.firebasestorage.app",
+            messagingSenderId: "608686730576",
+            appId: "1:608686730576:web:002b653cb7ffa7b3381055"
+        };
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        h1 { color: #1a237e; margin-bottom: 5px; }
+        .subtitle { color: #888; margin-bottom: 20px; font-size: 0.9rem; }
+        .manager-block { background: #e8eaf6; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .manager-block select { padding: 10px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; width: 220px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        .btn-primary { background: #3949ab; color: white; }
+        .btn-outline { background: white; color: #3949ab; border: 1px solid #3949ab; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; color: #444; }
+        input, select, textarea { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit; }
+        textarea { resize: vertical; min-height: 80px; }
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+        #datetime { background: #f5f5f5; color: #555; }
+        .interest-options { display: none; }
+        .btn-submit { background: #2e7d32; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 5px; font-weight: 600; }
+        .btn-submit:hover { background: #1b5e20; }
+        .history { margin-top: 30px; }
+        .history h3 { margin-bottom: 12px; color: #2c3e50; }
+        .call-card { background: #fafafa; padding: 12px 15px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #3949ab; font-size: 0.9rem; }
+        .call-card.negative { border-left-color: #e53935; }
+        .call-card .meta { color: #888; font-size: 0.8rem; margin-top: 3px; }
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 15px; }
+        .pagination button { background: #3949ab; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; }
+        .pagination button:disabled { background: #bbb; cursor: not-allowed; }
+        .pagination span { font-weight: 600; }
+        .hidden { display: none !important; }
+        .msg { padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; }
+        .msg-error { background: #ffebee; color: #c62828; }
+        .msg-success { background: #e8f5e9; color: #2e7d32; }
+        .duplicates-box { background: #fff3e0; border: 1px solid #ffb74d; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .duplicates-box h4 { margin: 0 0 8px; color: #e65100; }
+        .dup-call { font-size: 0.85rem; margin-bottom: 4px; }
+        @media (max-width: 500px) {
+            .row { flex-direction: column; gap: 0; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🏭 Волга Брик — Обзвон</h1>
+    <p class="subtitle">Фиксация результатов звонков клиентам</p>
+
+    <div id="manager-setup" class="manager-block hidden">
+        <label style="margin:0;">👤 Выберите себя:</label>
+        <select id="manager-select">
+            <option value="">-- Выберите --</option>
+            <optgroup label="Тукая">
+                <option value="Артем">Артем</option>
+                <option value="Руслан">Руслан</option>
+                <option value="Алия">Алия</option>
+                <option value="Айнур">Айнур</option>
+            </optgroup>
+            <optgroup label="Гареева">
+                <option value="Аделина">Аделина</option>
+                <option value="Альзам">Альзам</option>
+                <option value="Санжар">Санжар</option>
+                <option value="Яна">Яна</option>
+                <option value="Булат">Булат</option>
+            </optgroup>
+            <optgroup label="Старшие менеджеры">
+                <option value="Александр">Александр</option>
+                <option value="Альфинур">Альфинур</option>
+            </optgroup>
+        </select>
+        <button class="btn btn-primary" id="btn-start">Начать работу</button>
+    </div>
+
+    <div id="manager-active" class="manager-block hidden">
+        <span>👤 <strong id="display-manager"></strong></span>
+        <button class="btn btn-outline" id="btn-change" style="font-size:0.8rem;">🔄 Сменить</button>
+    </div>
+
+    <div id="call-form" class="hidden">
+        <div class="row">
+            <div class="form-group"><label>ФИО клиента *</label><input type="text" id="client-name" placeholder="Петров Петр Петрович"></div>
+            <div class="form-group">
+                <label>Телефон *</label>
+                <input type="tel" id="client-phone" placeholder="+7 (___) ___-__-__" maxlength="18">
+                <div id="duplicate-info"></div>
+            </div>
+        </div>
+        <div class="form-group"><label>Дата и время</label><input type="text" id="datetime" readonly></div>
+        <div class="form-group"><label>Результат *</label><select id="interest"><option value="">-- Выберите --</option><option value="интересно">✅ Интересно</option><option value="не интересно">❌ Не интересно</option></select></div>
+        <div id="block-interest" class="interest-options"><div class="form-group"><label>Комментарий</label><textarea id="comment-interest" placeholder="Что заинтересовало..."></textarea></div></div>
+        <div id="block-no-interest" class="interest-options">
+            <div class="form-group"><label>Причина отказа *</label><select id="reason"><option value="">-- Укажите --</option><option value="Цена">Цена</option><option value="Доставка">Доставка</option><option value="Качество">Качество</option><option value="Внешний вид">Внешний вид</option><option value="Другое">Другое</option></select></div>
+            <div class="form-group"><label>Комментарий</label><textarea id="comment-no-interest" placeholder="Заметки..."></textarea></div>
+        </div>
+        <button class="btn-submit" id="btn-submit">✅ Завершить звонок</button>
+        <div id="msg-box"></div>
+    </div>
+
+    <div class="history">
+        <h3>📋 Мои последние звонки</h3>
+        <div id="calls-list"><p style="color:#999;">Нет записей</p></div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+</div>
+
+<script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const STORAGE_MANAGER = 'vb_manager';
+    const STORAGE_CALLS = 'vb_local_calls';
+    const STORAGE_LAST_RESET = 'vb_last_reset';
+
+    let currentManager = null;
+    let localCalls = [];
+    let currentPage = 0;
+    const PER_PAGE = 5;
+
+    const $phone = document.getElementById('client-phone');
+    const $dupBox = document.getElementById('duplicate-info');
+
+    // Маска телефона
+    function formatPhone(value) {
+        let digits = value.replace(/\D/g, '');
+        if (digits.length > 0 && digits[0] !== '7') {
+            digits = '7' + digits.substring(0, 10);
+        }
+        digits = digits.substring(0, 11);
+        let formatted = '+7';
+        if (digits.length > 1) formatted += ' (' + digits.substring(1, 4);
+        if (digits.length >= 4) formatted += ') ' + digits.substring(4, 7);
+        if (digits.length >= 7) formatted += '-' + digits.substring(7, 9);
+        if (digits.length >= 9) formatted += '-' + digits.substring(9, 11);
+        return formatted;
+    }
+
+    $phone.addEventListener('input', function(e) {
+        const cursor = $phone.selectionStart;
+        const prevLength = $phone.value.length;
+        let formatted = formatPhone($phone.value);
+        $phone.value = formatted;
+        const newLength = formatted.length;
+        if (newLength > prevLength) {
+            $phone.setSelectionRange(cursor + (newLength - prevLength), cursor + (newLength - prevLength));
+        } else {
+            $phone.setSelectionRange(cursor, cursor);
+        }
+        if (formatted.length === 18) {
+            checkDuplicatePhone(formatted);
+        } else {
+            $dupBox.innerHTML = '';
+        }
+    });
+
+    $phone.addEventListener('blur', function() {
+        if ($phone.value.length === 18) {
+            checkDuplicatePhone($phone.value);
+        }
+    });
+
+    function checkDuplicatePhone(phone) {
+        db.ref('calls').orderByChild('phone').equalTo(phone).once('value')
+            .then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    const calls = Object.values(data);
+                    calls.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+                    const recent = calls.slice(0, 3);
+                    let html = '<div class="duplicates-box"><h4>⚠ Этому номеру уже звонили:</h4>';
+                    recent.forEach(c => {
+                        html += `<div class="dup-call">📞 ${c.timestamp} — ${c.manager}: ${c.interest === 'интересно' ? '✅ Интересно' : '❌ '+(c.reason||'Не интересно')}${c.comment ? ' ('+c.comment+')' : ''}</div>`;
+                    });
+                    html += '</div>';
+                    $dupBox.innerHTML = html;
+                } else {
+                    $dupBox.innerHTML = '';
+                }
+            })
+            .catch(err => console.error('Ошибка проверки дубликата:', err));
+    }
+
+    // --- Остальные переменные и функции ---
+    const $setup = document.getElementById('manager-setup');
+    const $active = document.getElementById('manager-active');
+    const $form = document.getElementById('call-form');
+    const $select = document.getElementById('manager-select');
+    const $display = document.getElementById('display-manager');
+    const $datetime = document.getElementById('datetime');
+    const $interest = document.getElementById('interest');
+    const $blockInt = document.getElementById('block-interest');
+    const $blockNo = document.getElementById('block-no-interest');
+    const $msg = document.getElementById('msg-box');
+    const $list = document.getElementById('calls-list');
+    const $pager = document.getElementById('pagination');
+
+    function updateClock() {
+        const now = new Date();
+        $datetime.value = now.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    function loadLocalCalls() {
+        const raw = localStorage.getItem(STORAGE_CALLS);
+        if (raw) { try { localCalls = JSON.parse(raw); } catch(e) { localCalls = []; } }
+        else localCalls = [];
+        if (currentManager) localCalls = localCalls.filter(c => c.manager === currentManager);
+    }
+
+    function saveLocalCalls() {
+        let all = localStorage.getItem(STORAGE_CALLS);
+        let allCalls = all ? (() => { try { return JSON.parse(all); } catch(e) { return []; } })() : [];
+        const others = allCalls.filter(c => c.manager !== currentManager);
+        const merged = [...localCalls, ...others].slice(0, 200);
+        localStorage.setItem(STORAGE_CALLS, JSON.stringify(merged));
+    }
+
+    // Проверка флага сброса
+    function checkResetFlag() {
+        db.ref('reset/timestamp').on('value', snapshot => {
+            const serverTimestamp = snapshot.val();
+            if (!serverTimestamp) return;
+            const localLastReset = localStorage.getItem(STORAGE_LAST_RESET);
+            if (!localLastReset || serverTimestamp > parseInt(localLastReset)) {
+                // Сбрасываем локальные звонки текущего менеджера
+                if (currentManager) {
+                    localCalls = [];
+                    saveLocalCalls();
+                    renderCalls();
+                }
+                localStorage.setItem(STORAGE_LAST_RESET, serverTimestamp.toString());
+            }
+        });
+    }
+
+    function loadManager() {
+        const saved = localStorage.getItem(STORAGE_MANAGER);
+        if (saved) {
+            currentManager = saved;
+            const options = [...$select.options].map(o => o.value);
+            if (!options.includes(saved)) {
+                localStorage.removeItem(STORAGE_MANAGER);
+                showSetup();
+                return;
+            }
+            showActive();
+            loadLocalCalls();
+            renderCalls();
+        } else {
+            showSetup();
+        }
+        checkResetFlag(); // запускаем слушатель сброса
+    }
+
+    function showSetup() {
+        $setup.classList.remove('hidden');
+        $active.classList.add('hidden');
+        $form.classList.add('hidden');
+    }
+    function showActive() {
+        $setup.classList.add('hidden');
+        $active.classList.remove('hidden');
+        $form.classList.remove('hidden');
+        $display.textContent = currentManager;
+    }
+
+    function renderCalls() {
+        const total = localCalls.length;
+        const maxPage = Math.max(0, Math.ceil(total / PER_PAGE) - 1);
+        if (currentPage > maxPage) currentPage = maxPage;
+        if (currentPage < 0) currentPage = 0;
+        const start = currentPage * PER_PAGE;
+        const page = localCalls.slice(start, start + PER_PAGE);
+        if (total === 0) {
+            $list.innerHTML = '<p style="color:#999;">Нет записей</p>';
+        } else {
+            $list.innerHTML = page.map(c => {
+                const neg = c.interest === 'не интересно';
+                return `<div class="call-card ${neg ? 'negative' : ''}">
+                    <strong>${c.clientName}</strong> 📞 ${c.phone}
+                    <div class="meta">🕒 ${c.timestamp}</div>
+                    ${c.interest === 'интересно' ? '✅ Интересно' + (c.comment ? ' — ' + c.comment : '') : '❌ Не интересно' + (c.reason ? ' — ' + c.reason : '') + (c.comment ? '. ' + c.comment : '')}
+                </div>`;
+            }).join('');
+        }
+        $pager.innerHTML = total > PER_PAGE
+            ? `<button onclick="changePage(-1)" ${currentPage === 0 ? 'disabled' : ''}>◀ Назад</button>
+               <span>Стр. ${currentPage+1} из ${maxPage+1}</span>
+               <button onclick="changePage(1)" ${currentPage >= maxPage ? 'disabled' : ''}>Вперёд ▶</button>`
+            : (total > 0 ? `<span>Показано: ${total}</span>` : '');
+    }
+    window.changePage = function(d) { currentPage += d; renderCalls(); };
+
+    function showMessage(text, isError) {
+        $msg.innerHTML = `<div class="msg ${isError ? 'msg-error' : 'msg-success'}">${text}</div>`;
+        setTimeout(() => $msg.innerHTML = '', 3000);
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        const selected = $select.value;
+        if (!selected) { alert('Выберите себя из списка'); return; }
+        currentManager = selected;
+        localStorage.setItem(STORAGE_MANAGER, selected);
+        showActive();
+        loadLocalCalls();
+        renderCalls();
+        checkResetFlag();
+    });
+
+    document.getElementById('btn-change').addEventListener('click', () => {
+        if (confirm('Сменить менеджера? Локальная история сохранится.')) {
+            localStorage.removeItem(STORAGE_MANAGER);
+            showSetup();
+            localCalls = [];
+            $list.innerHTML = '<p style="color:#999;">Нет записей</p>';
+            $pager.innerHTML = '';
+        }
+    });
+
+    $interest.addEventListener('change', () => {
+        $blockInt.style.display = $interest.value === 'интересно' ? 'block' : 'none';
+        $blockNo.style.display = $interest.value === 'не интересно' ? 'block' : 'none';
+    });
+
+    document.getElementById('btn-submit').addEventListener('click', () => {
+        const clientName = document.getElementById('client-name').value.trim();
+        const phone = $phone.value.trim();
+        const interest = $interest.value;
+        if (!clientName) { showMessage('Введите ФИО клиента', true); return; }
+        if (!phone || phone.length < 18) { showMessage('Введите полный номер телефона', true); return; }
+        if (!interest) { showMessage('Выберите результат', true); return; }
+
+        let comment = '', reason = null;
+        if (interest === 'интересно') {
+            comment = document.getElementById('comment-interest').value.trim();
+        } else {
+            reason = document.getElementById('reason').value;
+            if (!reason) { showMessage('Укажите причину отказа', true); return; }
+            comment = document.getElementById('comment-no-interest').value.trim();
+        }
+
+        const callObj = {
+            manager: currentManager,
+            clientName,
+            phone,
+            timestamp: $datetime.value,
+            interest,
+            reason,
+            comment: comment || null
+        };
+
+        db.ref('calls').push(callObj)
+            .then(() => {
+                localCalls.unshift(callObj);
+                if (localCalls.length > 100) localCalls.pop();
+                saveLocalCalls();
+                renderCalls();
+                showMessage('✅ Звонок сохранён в облаке', false);
+            })
+            .catch(err => {
+                console.error('Ошибка Firebase:', err);
+                localCalls.unshift(callObj);
+                if (localCalls.length > 100) localCalls.pop();
+                saveLocalCalls();
+                renderCalls();
+                showMessage('⚠ Нет интернета. Сохранено локально.', true);
+            });
+
+        document.getElementById('client-name').value = '';
+        $phone.value = '';
+        $dupBox.innerHTML = '';
+        $interest.value = '';
+        $blockInt.style.display = 'none';
+        $blockNo.style.display = 'none';
+        document.getElementById('comment-interest').value = '';
+        document.getElementById('reason').value = '';
+        document.getElementById('comment-no-interest').value = '';
+        updateClock();
+    });
+
+    loadManager();
+</script>
+</body>
+</html>
