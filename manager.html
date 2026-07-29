@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Волга Брик — Менеджер</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'] },
+                    colors: {
+                        primary: { DEFAULT: "#03c871", foreground: "#ffffff" },
+                        destructive: { DEFAULT: "#c62828", foreground: "#ffffff" },
+                        muted: { DEFAULT: "#f4f4f5", foreground: "#71717a" },
+                        card: { DEFAULT: "#ffffff", foreground: "#09090b" },
+                        border: "#e4e4e7",
+                        ring: "#03c871",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans antialiased">
+    <div class="max-w-2xl mx-auto p-6">
+        <h1 class="text-2xl font-semibold text-primary flex items-center gap-2 mb-1">
+            <i data-lucide="factory" class="h-6 w-6"></i> Волга Брик — Обзвон
+        </h1>
+        <p class="text-muted-foreground text-sm mb-6">Фиксация результатов звонков клиентам</p>
+
+        <!-- Выбор менеджера -->
+        <div id="manager-setup" class="hidden bg-muted/30 border rounded-xl p-4 mb-6 flex flex-wrap items-center gap-3">
+            <label class="text-sm font-medium">👤 Выберите себя:</label>
+            <select id="manager-select" class="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring w-48">
+                <option value="">-- Выберите --</option>
+                <optgroup label="Тукая">
+                    <option>Артем</option><option>Руслан</option><option>Алия</option><option>Айнур</option>
+                </optgroup>
+                <optgroup label="Гареева">
+                    <option>Аделина</option><option>Альзам</option><option>Санжар</option><option>Яна</option><option>Булат</option>
+                </optgroup>
+                <optgroup label="Старшие менеджеры">
+                    <option>Александр</option><option>Альфинур</option>
+                </optgroup>
+            </select>
+            <button id="btn-start" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm font-medium transition-colors">
+                Начать работу
+            </button>
+        </div>
+
+        <!-- Активный менеджер -->
+        <div id="manager-active" class="hidden bg-muted/30 border rounded-xl p-4 mb-6 flex items-center gap-3">
+            <span class="font-medium">👤 <strong id="display-manager" class="text-primary"></strong></span>
+            <button id="btn-change" class="inline-flex items-center rounded-md border border-input bg-background hover:bg-muted/50 h-8 px-3 text-xs font-medium transition-colors">
+                <i data-lucide="rotate-cw" class="h-4 w-4 mr-1"></i> Сменить
+            </button>
+        </div>
+
+        <!-- Форма звонка -->
+        <div id="call-form" class="hidden space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-medium">ФИО клиента *</label>
+                    <input type="text" id="client-name" placeholder="Петров Петр Петрович" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                </div>
+                <div>
+                    <label class="text-sm font-medium">Телефон *</label>
+                    <input type="tel" id="client-phone" placeholder="+7 (___) ___-__-__" maxlength="18" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <div id="duplicate-info" class="mt-2"></div>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-medium">Дата и время</label>
+                <input type="text" id="datetime" readonly class="flex h-9 w-full rounded-md border border-input bg-muted/50 px-3 py-1 text-sm mt-1 text-muted-foreground">
+            </div>
+            <div>
+                <label class="text-sm font-medium">Результат *</label>
+                <select id="interest" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <option value="">-- Выберите --</option>
+                    <option value="интересно">✅ Интересно</option>
+                    <option value="покупают">🛒 Покупают</option>
+                    <option value="не интересно">❌ Не интересно</option>
+                </select>
+            </div>
+            <div id="block-interest" class="interest-options hidden">
+                <label class="text-sm font-medium">Комментарий</label>
+                <textarea id="comment-interest" placeholder="Что заинтересовало или детали покупки..." class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"></textarea>
+            </div>
+            <div id="block-no-interest" class="interest-options hidden">
+                <div class="mb-4">
+                    <label class="text-sm font-medium">Причина отказа *</label>
+                    <select id="reason" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        <option value="">-- Укажите --</option>
+                        <option value="Цена">Цена</option>
+                        <option value="Доставка">Доставка</option>
+                        <option value="Качество">Качество</option>
+                        <option value="Внешний вид">Внешний вид</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                </div>
+                <label class="text-sm font-medium">Комментарий</label>
+                <textarea id="comment-no-interest" placeholder="Заметки..." class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"></textarea>
+            </div>
+            <button id="btn-submit" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium transition-colors w-full">
+                <i data-lucide="check-circle" class="h-4 w-4 mr-2"></i> Завершить звонок
+            </button>
+            <div id="msg-box"></div>
+        </div>
+
+        <!-- История -->
+        <div class="mt-8">
+            <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                <i data-lucide="history" class="h-5 w-5 text-muted-foreground"></i> Мои последние звонки
+            </h3>
+            <div id="calls-list" class="space-y-2">
+                <p class="text-muted-foreground text-sm">Нет записей</p>
+            </div>
+            <div class="flex items-center justify-center gap-3 mt-4" id="pagination"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-YD6qkyRFo3xQTLkX68Tqx7xMb-ojNiM",
+            authDomain: "volgabrick-f2260.firebaseapp.com",
+            projectId: "volgabrick-f2260",
+            storageBucket: "volgabrick-f2260.firebasestorage.app",
+            messagingSenderId: "608686730576",
+            appId: "1:608686730576:web:002b653cb7ffa7b3381055"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const STORAGE_MANAGER = 'vb_manager', STORAGE_CALLS = 'vb_local_calls', STORAGE_LAST_RESET = 'vb_last_reset';
+        let currentManager = null, localCalls = [], currentPage = 0;
+        const PER_PAGE = 5;
+
+        const $setup = document.getElementById('manager-setup'), $active = document.getElementById('manager-active'),
+            $form = document.getElementById('call-form'), $select = document.getElementById('manager-select'),
+            $display = document.getElementById('display-manager'), $phone = document.getElementById('client-phone'),
+            $dupBox = document.getElementById('duplicate-info'), $datetime = document.getElementById('datetime'),
+            $interest = document.getElementById('interest'), $blockInt = document.getElementById('block-interest'),
+            $blockNo = document.getElementById('block-no-interest'), $msg = document.getElementById('msg-box'),
+            $list = document.getElementById('calls-list'), $pager = document.getElementById('pagination');
+
+        function formatPhone(value) {
+            let digits = value.replace(/\D/g, '');
+            if (digits.length > 0 && digits[0] !== '7') digits = '7' + digits.substring(0, 10);
+            digits = digits.substring(0, 11);
+            let f = '+7';
+            if (digits.length > 1) f += ' (' + digits.substring(1, 4);
+            if (digits.length >= 4) f += ') ' + digits.substring(4, 7);
+            if (digits.length >= 7) f += '-' + digits.substring(7, 9);
+            if (digits.length >= 9) f += '-' + digits.substring(9, 11);
+            return f;
+        }
+
+        $phone.addEventListener('input', function(e) {
+            const cursor = $phone.selectionStart, prev = $phone.value.length;
+            let formatted = formatPhone($phone.value);
+            $phone.value = formatted;
+            const newLen = formatted.length;
+            if (newLen > prev) $phone.setSelectionRange(cursor + (newLen - prev), cursor + (newLen - prev));
+            else $phone.setSelectionRange(cursor, cursor);
+            if (formatted.length === 18) checkDuplicatePhone(formatted);
+            else $dupBox.innerHTML = '';
+        });
+        $phone.addEventListener('blur', () => { if ($phone.value.length === 18) checkDuplicatePhone($phone.value); });
+
+        function checkDuplicatePhone(phone) {
+            db.ref('calls').orderByChild('phone').equalTo(phone).once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const calls = Object.values(data);
+                        calls.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+                        const recent = calls.slice(0, 3);
+                        let html = '<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"><h4 class="font-semibold text-amber-700 mb-1">⚠ Этому номеру уже звонили:</h4>';
+                        recent.forEach(c => {
+                            let result = c.interest === 'интересно' ? '✅ Интересно' : (c.interest === 'покупают' ? '🛒 Покупают' : '❌ ' + (c.reason || 'Не интересно'));
+                            html += `<div class="text-amber-800">📞 ${c.timestamp} — ${c.manager}: ${result}${c.comment ? ' ('+c.comment+')' : ''}</div>`;
+                        });
+                        html += '</div>';
+                        $dupBox.innerHTML = html;
+                    } else $dupBox.innerHTML = '';
+                });
+        }
+
+        function updateClock() {
+            $datetime.value = new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        }
+        updateClock(); setInterval(updateClock, 1000);
+
+        function loadLocalCalls() {
+            const raw = localStorage.getItem(STORAGE_CALLS);
+            localCalls = raw ? JSON.parse(raw) : [];
+            if (currentManager) localCalls = localCalls.filter(c => c.manager === currentManager);
+        }
+        function saveLocalCalls() {
+            let all = localStorage.getItem(STORAGE_CALLS), allCalls = all ? JSON.parse(all) : [];
+            const others = allCalls.filter(c => c.manager !== currentManager);
+            const merged = [...localCalls, ...others].slice(0, 200);
+            localStorage.setItem(STORAGE_CALLS, JSON.stringify(merged));
+        }
+
+        function renderCalls() {
+            const total = localCalls.length, maxPage = Math.max(0, Math.ceil(total / PER_PAGE) - 1);
+            if (currentPage > maxPage) currentPage = maxPage;
+            if (currentPage < 0) currentPage = 0;
+            const start = currentPage * PER_PAGE, page = localCalls.slice(start, start + PER_PAGE);
+            if (total === 0) {
+                $list.innerHTML = '<p class="text-muted-foreground text-sm">Нет записей</p>';
+            } else {
+                $list.innerHTML = page.map(c => {
+                    let resultHtml = '', borderClass = 'border-l-primary';
+                    if (c.interest === 'интересно') resultHtml = '✅ Интересно' + (c.comment ? ' — ' + c.comment : '');
+                    else if (c.interest === 'покупают') { resultHtml = '🛒 Покупают' + (c.comment ? ' — ' + c.comment : ''); borderClass = 'border-l-blue-600'; }
+                    else { resultHtml = '❌ Не интересно' + (c.reason ? ' — ' + c.reason : '') + (c.comment ? '. ' + c.comment : ''); borderClass = 'border-l-destructive'; }
+                    return `<div class="bg-card border rounded-lg p-3 border-l-4 ${borderClass} text-sm">
+                        <strong>${c.clientName}</strong> 📞 ${c.phone}
+                        <div class="text-xs text-muted-foreground mt-1">🕒 ${c.timestamp}</div>
+                        <div class="mt-1">${resultHtml}</div>
+                    </div>`;
+                }).join('');
+            }
+            $pager.innerHTML = total > PER_PAGE
+                ? `<button onclick="changePage(-1)" ${currentPage===0?'disabled':''} class="inline-flex items-center rounded-md border border-input bg-background hover:bg-muted/50 h-8 px-3 text-xs font-medium disabled:opacity-50">◀ Назад</button>
+                   <span class="text-sm text-muted-foreground">Стр. ${currentPage+1} из ${maxPage+1}</span>
+                   <button onclick="changePage(1)" ${currentPage>=maxPage?'disabled':''} class="inline-flex items-center rounded-md border border-input bg-background hover:bg-muted/50 h-8 px-3 text-xs font-medium disabled:opacity-50">Вперёд ▶</button>`
+                : (total > 0 ? `<span class="text-sm text-muted-foreground">Показано: ${total}</span>` : '');
+        }
+        window.changePage = function(d) { currentPage += d; renderCalls(); };
+
+        function showMessage(text, isError) {
+            $msg.innerHTML = `<div class="mt-2 rounded-md px-3 py-2 text-sm ${isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">${text}</div>`;
+            setTimeout(() => $msg.innerHTML = '', 3000);
+        }
+
+        function checkResetFlag() {
+            db.ref('reset/timestamp').on('value', snapshot => {
+                const serverTimestamp = snapshot.val();
+                if (!serverTimestamp) return;
+                const localLastReset = localStorage.getItem(STORAGE_LAST_RESET);
+                if (!localLastReset || serverTimestamp > parseInt(localLastReset)) {
+                    if (currentManager) { localCalls = []; saveLocalCalls(); renderCalls(); }
+                    localStorage.setItem(STORAGE_LAST_RESET, serverTimestamp.toString());
+                }
+            });
+        }
+
+        function loadManager() {
+            const saved = localStorage.getItem(STORAGE_MANAGER);
+            if (saved) {
+                currentManager = saved;
+                const options = [...$select.options].map(o => o.value);
+                if (!options.includes(saved)) { localStorage.removeItem(STORAGE_MANAGER); showSetup(); return; }
+                showActive(); loadLocalCalls(); renderCalls();
+            } else showSetup();
+            checkResetFlag();
+        }
+        function showSetup() { $setup.classList.remove('hidden'); $active.classList.add('hidden'); $form.classList.add('hidden'); }
+        function showActive() { $setup.classList.add('hidden'); $active.classList.remove('hidden'); $form.classList.remove('hidden'); $display.textContent = currentManager; }
+
+        document.getElementById('btn-start').addEventListener('click', () => {
+            const selected = $select.value;
+            if (!selected) { alert('Выберите себя из списка'); return; }
+            currentManager = selected;
+            localStorage.setItem(STORAGE_MANAGER, selected);
+            showActive(); loadLocalCalls(); renderCalls(); checkResetFlag();
+        });
+        document.getElementById('btn-change').addEventListener('click', () => {
+            if (confirm('Сменить менеджера?')) { localStorage.removeItem(STORAGE_MANAGER); showSetup(); localCalls = []; $list.innerHTML = '<p class="text-muted-foreground text-sm">Нет записей</p>'; $pager.innerHTML = ''; }
+        });
+        $interest.addEventListener('change', () => {
+            const val = $interest.value;
+            $blockInt.style.display = (val === 'интересно' || val === 'покупают') ? 'block' : 'none';
+            $blockNo.style.display = (val === 'не интересно') ? 'block' : 'none';
+        });
+        document.getElementById('btn-submit').addEventListener('click', () => {
+            const clientName = document.getElementById('client-name').value.trim();
+            const phone = $phone.value.trim();
+            const interest = $interest.value;
+            if (!clientName) { showMessage('Введите ФИО клиента', true); return; }
+            if (!phone || phone.length < 18) { showMessage('Введите полный номер телефона', true); return; }
+            if (!interest) { showMessage('Выберите результат', true); return; }
+            let comment = '', reason = null;
+            if (interest === 'интересно' || interest === 'покупают') comment = document.getElementById('comment-interest').value.trim();
+            else { reason = document.getElementById('reason').value; if (!reason) { showMessage('Укажите причину отказа', true); return; } comment = document.getElementById('comment-no-interest').value.trim(); }
+            const callObj = { manager: currentManager, clientName, phone, timestamp: $datetime.value, interest, reason, comment: comment || null };
+            db.ref('calls').push(callObj)
+                .then(() => { localCalls.unshift(callObj); if (localCalls.length > 100) localCalls.pop(); saveLocalCalls(); renderCalls(); showMessage('✅ Звонок сохранён в облаке', false); })
+                .catch(err => { localCalls.unshift(callObj); if (localCalls.length > 100) localCalls.pop(); saveLocalCalls(); renderCalls(); showMessage('⚠ Нет интернета. Сохранено локально.', true); });
+            document.getElementById('client-name').value = ''; $phone.value = ''; $dupBox.innerHTML = ''; $interest.value = ''; $blockInt.style.display = 'none'; $blockNo.style.display = 'none';
+            document.getElementById('comment-interest').value = ''; document.getElementById('reason').value = ''; document.getElementById('comment-no-interest').value = ''; updateClock();
+        });
+
+        lucide.createIcons();
+        loadManager();
+    </script>
+</body>
+</html>
